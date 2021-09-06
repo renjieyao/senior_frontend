@@ -63,7 +63,7 @@ class ResponseParser {
         this.headerValue= '';
         this.bodyParser = null;
     }
-
+    // get 取值函数；set 存值函数
     get isFinished(){
         return this.bodyParser && this.bodyParser.isFinished;
     }
@@ -78,8 +78,11 @@ class ResponseParser {
     }
 
     receive(str) {
-        for (let i = 0; i < str.length; i++) {
-            this.receiveChar(str.charAt(i));
+        // for (let i = 0; i < str.length; i++) {
+        //     this.receiveChar(str.charAt(i));
+        // }
+        for(let c of str){
+            this.receiveChar(c)
         }
     }
 
@@ -94,10 +97,10 @@ class ResponseParser {
             if(char === '\n'){
                 this.current = this.WAITING_HEADER_NAME;
             }
-        }else if(this.current = this.WAITING_HEADER_NAME){
-            if(this.char === ':'){
+        }else if(this.current === this.WAITING_HEADER_NAME){
+            if(char === ':'){
                 this.current = this.WAITING_HEADER_SPACE;
-            }else if(this.char === '\r'){
+            }else if(char === '\r'){
                 this.current = this.WAITING_HEADER_BLOCK_END;
                 if(this.headers['Transfer-Encoding'] === 'chunked')
                     this.bodyParser = new TrunkedBodyParser();
@@ -111,7 +114,7 @@ class ResponseParser {
         }else if(this.current === this.WAITING_HEADER_VALUE){
             if(char === '\r'){
                 this.current = this.WAITING_HEADER_LINE_END;
-                this.headers[headerName] = this.headerValue;
+                this.headers[this.headerName] = this.headerValue;
                 this.headerName = '';
                 this.headerValue = '';
             }else{
@@ -155,7 +158,7 @@ class Request {
 
     send(connection) {
         return new Promise((resolve, reject) => {
-            const parser = new ResponseParser;
+            const parser = new ResponseParser();
             if (connection) {
                 connection.write(this.toString());
             } else {
@@ -182,9 +185,9 @@ class Request {
     }
 
     toString() {
-        return `${this.method} ${this.path} HTTP/1.1\r\n${Object.keys(this.headers)
-            .map(key => `${key}: ${this.headers[key]}`)
-            .join('\r\n')}\r\n\r\n${this.bodyText}`;
+        // return `${this.method} ${this.path} HTTP/1.1\r\n${Object.keys(this.headers)
+        //     .map(key => `${key}: ${this.headers[key]}`)
+        //     .join('\r\n')}\r\n\r\n${this.bodyText}`;
         let request = `${this.method} ${this.path} HTTP/1.1\r
 ${Object.keys(this.headers).map(key => `${key}: ${this.headers[key]}`).join('\r\n')}\r
 \r
