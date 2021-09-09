@@ -1,4 +1,5 @@
 const net = require('net');
+const parser = require('./parser.js');
 
 class TrunkedBodyParser{
     constructor(){
@@ -69,7 +70,11 @@ class ResponseParser {
     }
     get response(){
         this.statusLine.match(/HTTP\/1.1 ([0-9]+) ([\s\S]+)/);
+        // /HTTP\/1.1 ([0-9]+) ([\s\S]+)/ 
+        // new RegExp(/HTTP\/1.1 ([0-9]+) ([\s\S]+)/)
         return {
+            // RegExp.$1
+            // 与正则表达式匹配的第一个 子匹配(以括号为标志)字符串
             statusCode: RegExp.$1,
             statusText: RegExp.$2,
             headers: this.headers,
@@ -170,7 +175,7 @@ class Request {
                 })
             }
             connection.on('data', data => {
-                console.log(data.toString(),'xxxxx');
+                // console.log(data.toString(),'xxxxx');
                 parser.receive(data.toString());
                 if (parser.isFinished) {
                     resolve(parser.response);
@@ -212,5 +217,5 @@ void async function () {
 
     let response = await request.send();
 
-    console.log(response);
+    const dom = parser.parseHTML(response.body);
 }()
