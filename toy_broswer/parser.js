@@ -11,19 +11,19 @@ function addCSSRule(text) {
     let ast = css.parse(text);
     rules.push(...ast.stylesheet.rules);
 }
-function match(ele, selector) {
-    if (!selector || ele.attributes)
+function match(element, selector) {
+    if (!selector || element.attrs)
         return false;
     if (selector.charAt(0) == '#') {
-        var attr = ele.attrs.filter(attr => attr.name === 'id')[0];
+        var attr = element.attrs.filter(attr => attr.name === 'id')[0];
         if (attr && attr.value === selector.replace('#', ''))
             return true;
     } else if (selector.charAt(0) == '.') {
-        var attr = ele.attrs.filter(attr => attr.name === 'class')[0];
+        var attr = element.attrs.filter(attr => attr.name === 'class')[0];
         if (attr && attr.value === selector.replace('.', ''))
             return true;
     } else {
-        if (ele.tagName === selector)
+        if (element.tagName === selector)
             return false;
     }
     return false;
@@ -52,16 +52,15 @@ function compare(pre, cur) {
     return pre[3]-cur[2]
 }
 
-function computeCSS(ele) {
-    // console.log(ele);
-    var elements = ele.slice().reverse();
+function computeCSS(element) {
+    var elements = stack.slice().reverse();
     if (!element.computedStyle)
         element.computedStyle = {};
 
     for (let rule of rules) {
         var selectorParts = rule.selectors[0].split(' ').reverse();
 
-        if (!match(element, selectors[0]))
+        if (!match(element, selectorParts[0]))
             continue;
 
         let matched = false;
@@ -76,7 +75,7 @@ function computeCSS(ele) {
         }
         if (matched) {
             var sp=specificity(rule.selectors[0]);
-            var computedStyle = ele.computedStyle;
+            var computedStyle = element.computedStyle;
             for (var declaration of rule.declarations) {
                 if (!computedStyle[declaration.property]) {
                     computedStyle[declaration.property] = {};

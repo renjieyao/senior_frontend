@@ -218,4 +218,6 @@ void async function () {
     let response = await request.send();
 
     const dom = parser.parseHTML(response.body);
+    console.log(dom);
+    
 }()
