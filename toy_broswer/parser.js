@@ -12,8 +12,9 @@ function addCSSRule(text) {
     rules.push(...ast.stylesheet.rules);
 }
 function match(element, selector) {
-    if (!selector || element.attrs)
+    if (!selector || !element.attrs)
         return false;
+    // simple selector
     if (selector.charAt(0) == '#') {
         var attr = element.attrs.filter(attr => attr.name === 'id')[0];
         if (attr && attr.value === selector.replace('#', ''))
@@ -24,11 +25,14 @@ function match(element, selector) {
             return true;
     } else {
         if (element.tagName === selector)
-            return false;
+            return true;
     }
     return false;
 }
 function specificity(selector) {
+    //      style #id  .class tag 
+    // p = [0,    0,    0,    0,];
+    // no carry  array
     var p = [0, 0, 0, 0,];
     var selectorsParts = selector.split(' ');
     for (var part of selectorsParts) {
@@ -49,15 +53,21 @@ function compare(pre, cur) {
         return pre[1] - cur[1];
     if (pre[2] - cur[2])
         return pre[2] - cur[2];
-    return pre[3]-cur[2]
+    return pre[3] - cur[2]
 }
 
 function computeCSS(element) {
+    // we must estimate the match between the rule and the element by all elements' parent.
+    // all elements' parent in stack.
+    // because the stack is variable,using the function of slice to copy the orginal array.
+    // the order of matching tag: from current element to its parent level by level. 
     var elements = stack.slice().reverse();
     if (!element.computedStyle)
         element.computedStyle = {};
 
     for (let rule of rules) {
+        // The function of reverse to keep the order with the parent element.
+        // ignore the comlicated selectors
         var selectorParts = rule.selectors[0].split(' ').reverse();
 
         if (!match(element, selectorParts[0]))
@@ -66,6 +76,7 @@ function computeCSS(element) {
         let matched = false;
         var j = 1;
         for (var i = 0; i < elements.length; i++) {
+            // 
             if (match(elements[i], selectorParts[j])) {
                 j++;
             }
@@ -74,18 +85,18 @@ function computeCSS(element) {
             matched = true;
         }
         if (matched) {
-            var sp=specificity(rule.selectors[0]);
+            var sp = specificity(rule.selectors[0]);
             var computedStyle = element.computedStyle;
             for (var declaration of rule.declarations) {
                 if (!computedStyle[declaration.property]) {
                     computedStyle[declaration.property] = {};
                 }
-                if(!computedStyle[declaration.property].specificity){
-                    computedStyle[declaration.property].value=declaration.value;
-                    computedStyle[declaration.property].specificity=sp;
-                }else if(compare(computedStyle[declaration.property].specificity,sp)){
+                if (!computedStyle[declaration.property].specificity) {
                     computedStyle[declaration.property].value = declaration.value;
-                    computedStyle[declaration.property].specificity=sp;
+                    computedStyle[declaration.property].specificity = sp;
+                } else if (compare(computedStyle[declaration.property].specificity, sp)) {
+                    computedStyle[declaration.property].value = declaration.value;
+                    computedStyle[declaration.property].specificity = sp;
                 }
             }
         }
@@ -110,7 +121,7 @@ function emit(token) {
                 })
             }
         }
-
+        //parse startTag with computing CSS rules
         computeCSS(element);
 
         top.children.push(element);

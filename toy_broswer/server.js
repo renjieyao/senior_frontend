@@ -19,22 +19,25 @@ http.createServer((request, response)=>{
             'Content-Type':'text/html',
         });
 
-        response.end(`
-            <html meta="a">
-            <head>
-                <style>
-                    body div #myid{
-                        width:100px
-                    }
-                </style>
-            </head>
-            <body>
-                <div id="myid">
-                
-                </div>
-            </body>
-            </html>
-        `)
+        response.end(
+`<html meta="a">
+<head>
+    <style>
+body div #myid{
+    width:100px
+}
+body div img{
+    width:80px
+}
+    </style>
+</head>
+<body>
+    <div>
+        <img id="myid" />
+        <img/>
+    </div>
+</body>
+</html>`)
     })
 }).listen(8088);
 
