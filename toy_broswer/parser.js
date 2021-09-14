@@ -36,9 +36,9 @@ function specificity(selector) {
     var p = [0, 0, 0, 0,];
     var selectorsParts = selector.split(' ');
     for (var part of selectorsParts) {
-        if (part.chatAt(0) == '#') {
+        if (part.charAt(0) == '#') {
             p[1] += 1;
-        } else if (part.chatAt(0) == '.') {
+        } else if (part.charAt(0) == '.') {
             p[2] += 1;
         } else {
             p[3] += 1;
@@ -158,7 +158,7 @@ function emit(token) {
 function data(c) {
     if (c === '<') {
         return tagOpen;
-    } else if (c === EOF) {
+    } else if (c == EOF) {
         emit({
             type: 'EOF',
         })
@@ -180,6 +180,7 @@ function tagOpen(c) {
             type: 'startTag',
             tagName: '',
         }
+        // reConsume
         return tagName(c);
     } else {
         return;
@@ -195,14 +196,14 @@ function endTagOpen(c) {
         return tagName(c);
     } else if (c === '>') {
 
-    } else if (c === EOF) {
+    } else if (c == EOF) {
 
     } else {
 
     }
 }
 
-function tagName(c) {
+function  tagName(c) {
     if (c.match(/^[\t\n\f ]$/)) {
         return beforeAttrName;
     } else if (c.match(/^[a-zA-Z]$/)) {
@@ -223,7 +224,7 @@ function beforeAttrName(c) {
         return beforeAttrName;
     } else if (c === '=') {
 
-    } else if (c === '>' || c === '/' || c === EOF) {
+    } else if (c === '>' || c === '/' || c == EOF) {
         return afterAttrName(c);
     } else {
         currentAttr = {
@@ -235,7 +236,7 @@ function beforeAttrName(c) {
 }
 
 function attrName(c) {
-    if (c.match(/^[\t\n\f ]$/) || c === '/' || c === '>' || c == 'EOF') {
+    if (c.match(/^[\t\n\f ]$/) || c === '/' || c === '>' || c == EOF) {
         return afterAttrName;
     } else if (c === '=') {
         return beforeAttrValue;
@@ -354,8 +355,9 @@ function afterAttrName(c) {
 function selfCloseStartTag(c) {
     if (c === '>') {
         currentToken.isSelfCloseTag = true;
+        emit(currentToken);
         return data;
-    } else if (c === EOF) {
+    } else if (c == EOF) {
 
     } else {
 
@@ -368,5 +370,5 @@ module.exports.parseHTML = function parseHTML(html) {
         state = state(c);
     }
     state = state(EOF);
-    console.log(stack[0]);
+    return stack[0];
 }
