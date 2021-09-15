@@ -219,5 +219,4 @@ void async function () {
 
     const dom = parser.parseHTML(response.body);
     console.log(dom);
-    
 }()

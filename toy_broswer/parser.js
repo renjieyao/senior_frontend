@@ -2,6 +2,7 @@ const EOF = Symbol('EOF');//end of file
 let currentToken = null;
 let currentAttr = null;
 let currentTextNode = null;
+let endConditionArr = ['/', '>', EOF];
 const css = require('css');
 
 let stack = [{ type: 'document', children: [] }];
@@ -92,12 +93,11 @@ function computeCSS(element) {
                     computedStyle[declaration.property] = {};
                 }
                 if (!computedStyle[declaration.property].specificity) {
-                    computedStyle[declaration.property].value = declaration.value;
                     computedStyle[declaration.property].specificity = sp;
                 } else if (compare(computedStyle[declaration.property].specificity, sp)) {
-                    computedStyle[declaration.property].value = declaration.value;
                     computedStyle[declaration.property].specificity = sp;
                 }
+                computedStyle[declaration.property].value = declaration.value;
             }
         }
     }
@@ -203,7 +203,7 @@ function endTagOpen(c) {
     }
 }
 
-function  tagName(c) {
+function tagName(c) {
     if (c.match(/^[\t\n\f ]$/)) {
         return beforeAttrName;
     } else if (c.match(/^[a-zA-Z]$/)) {
@@ -224,7 +224,7 @@ function beforeAttrName(c) {
         return beforeAttrName;
     } else if (c === '=') {
 
-    } else if (c === '>' || c === '/' || c == EOF) {
+    } else if (endConditionArr.includes(c)) {
         return afterAttrName(c);
     } else {
         currentAttr = {
@@ -236,13 +236,14 @@ function beforeAttrName(c) {
 }
 
 function attrName(c) {
-    if (c.match(/^[\t\n\f ]$/) || c === '/' || c === '>' || c == EOF) {
+    let attrConditionArr = ['\'', '<', '"'];
+    if (c.match(/^[\t\n\f ]$/) || endConditionArr.includes(c)) {
         return afterAttrName;
     } else if (c === '=') {
         return beforeAttrValue;
     } else if (c === '\u0000') {
 
-    } else if (c === '"' || c === '\'' || c === '<') {
+    } else if (attrConditionArr.includes(c)) {
 
     } else {
         currentAttr.name += c;
@@ -255,7 +256,7 @@ function beforeAttrValue(c) {
         return doubleQuotedAttrVal;
     } else if (c === '\'') {
         return singleQuotedAttrVal;
-    } else if (c.match(/^[\t\n\f ]$/) || c === '/' || c === '>' || c == EOF) {
+    } else if (c.match(/^[\t\n\f ]$/) || endConditionArr.includes(c)) {
         return beforeAttrValue;
     } else if (c === '>') {
 
@@ -310,6 +311,8 @@ function afterQuotedAttrValue(c) {
 }
 
 function unquotedAttrValue(c) {
+    // The use of includes for semantic
+    let conditionArr = ['\'', '\"', '`', '=', '<'];
     if (c.match(/^[\t\f\n ]$/)) {
         currentToken[currentAttr.name] = currentAttr.value;
         return beforeAttrName;
@@ -324,7 +327,7 @@ function unquotedAttrValue(c) {
 
     } else if (c == 'u0000') {
 
-    } else if (c === '\'' || c === '\"' || c === '`' || c === '=' || c === '<') {
+    } else if (conditionArr.includes(c)) {
 
     } else {
         currentAttr.value += c;
