@@ -1,9 +1,12 @@
 const EOF = Symbol('EOF');//end of file
+const css = require('css');
+const layout =require('./layout.js');
+
 let currentToken = null;
 let currentAttr = null;
 let currentTextNode = null;
+
 let endConditionArr = ['/', '>', EOF];
-const css = require('css');
 
 let stack = [{ type: 'document', children: [] }];
 
@@ -140,6 +143,7 @@ function emit(token) {
             if (top.tagName === 'style') {
                 addCSSRule(top.children[0].content);
             }
+            layout(top);
             stack.pop();
         }
         currentTextNode = null;
