@@ -164,9 +164,176 @@ function layout(ele) {
         }
         flexline.mainSpace = mainSpace;
 
-        console.log(item);
+        if (eleStyle.flexWrap === 'nowrap' || isAutoMainSize)
+            flexLine.crossSpace = (eleStyle[crossSize] !== undefined ? eleStyle[crossSize] : crossSpace)
+        else
+            flexLine.crossSpace = crossSpace;
 
+        if (mainSpace < 0) {
+            // overflow(happen only if container is single line)
+            // scale every item
+            let scale = eleStyle[mainSize] / (eleStyle[mainSize] - mainSpace);
+            let currentMain = mainSpace;
+            for (let i = 0; i < items.length; i++) {
+                let item = items[i];
+                let itemStyle = getStyle(item);
+                if (itemStyle.flex) {
+                    itemStyle[mainSize] = 0;
+                }
+
+                itemStyle[mainSize] = itemStyle[mainSize] * scale;
+
+                itemStyle[mainStart] = currentMain;
+                itemStyle[mainEnd] = itemStyle[mainStart] + mainSign * itemStyle[mainSize];
+                currentMain = itemStyle[mainEnd];
+            }
+        } else {
+            // process each flex line
+            flexLines.forEach(item => {
+                let mainSpace = items.mainSpace;
+                let flexTotal = 0;
+                for (let i = 0; i < items.length; i++) {
+                    let item = items[i];
+                    let itemStyle = getStyle(item);
+
+                    if (itemStyle.flex !== nulll && itemStyle.flex !== (void 0)) {
+                        flexTotal += itemStyle.flex;
+                        continue;
+                    }
+
+                    if (flexTotal > 0) {
+                        // There is flexible flex items
+                        let currentMain = mainBase;
+                        for (let i = 0; i < items.length; i++) {
+                            let item = items[i];
+                            let itemStyle = getStyle(item);
+
+                            if (itemStyle.flex)
+                                itemStyle[mainSize] = (mainSpace / flexTotal) * itemStyle.flex;
+                            itemStyle[mainStart] = currentMain;
+                            itemStyle[mainEnd] = itemStyle[mainStart] + mainSign * itemStyle[mainSize];
+                            currentMain = itemStyle[mainEnd];
+                        }
+                    } else {
+                        let step, currentMain;
+                        // There is *NO* flexible flex items,which means,justifyContent should work
+                        if (eleStyle.justifyContent === 'flex-start') {
+                            currentMain = mainBase;
+                            step = 0;
+                        }
+                        if (eleStyle.justifyContent === 'flex-end') {
+                            currentMain = mainBase * mainSign + mainBase;
+                            step = 0;
+                        }
+                        if (eleStyle.justifyContent === 'center') {
+                            currentMain = mainBase / 2 * mainSign + mainBase;
+                            step = 0;
+                        }
+                        if (eleStyle.justifyContent === 'space-between') {
+                            step = mainSpace / (items.length - 1) * mainSign;
+                            currentMain = mainBase;
+                        }
+                        if (eleStyle.justifyContent === 'space-around') {
+                            step = mainSpace / items.length * mainSign;
+                            currentMain = step / 2 + mainBase;
+                        }
+
+                        for (let i = 0; i < items.length; i++) {
+                            let item = items[i];
+                            itemStyle = getStyle(item);
+                            itemStyle[mainStart] = currentMain;
+                            itemStyle[mainEnd] = itemStyle[mainStart] + mainSign * itemStyle[mainSize];
+                            currentMain = itemStyle[mainEnd] + step;
+                        }
+                    }
+                }
+            })
+        }
     }
+
+    // compute the cross axis sizes
+    // align-items,align-self
+    if (!eleStyle[crossSize]) {
+        crossSpace = 0;
+        elementStyle[crossSize] = 0;
+        for (let i = 0; i < flexLines.length; i++) {
+            elementStyle[crossSize] = elementStyle[crossSize] + flexLines[i].crossSpace;
+        }
+    } else {
+        crossSpace = eleStyle[crossSize];
+        for (let i = 0; i < flexLines.length; i++) {
+            crossSpace -= flexLines[i].crossSpace;
+        }
+    }
+
+    if (style.flexWrap === 'wrap-reverse') {
+        crossSpace = style[crossSize];
+    } else {
+        crossBase = 0;
+    }
+    let lineSize = eleStyle[crossSize] / flexLines.length;
+    let step;
+    if (eleStyle.alignContent === 'flex-start') {
+        crossBase += 0;
+        step = 0;
+    }
+    if (eleStyle.alignContent === 'flex-end') {
+        crossBase += crossSign * crossSpace;
+        step = 0;
+    }
+    if (eleStyle.alignContent === 'center') {
+        crossBase += crossSign * crossSpace / 2;
+        step = 0;
+    }
+    if (eleStyle.alignContent === 'space-between') {
+        crossBase += 0;
+        step = crossBase / (flexLines.length - 1);
+    }
+    if (eleStyle.alignContent === 'space-around') {
+        step = crossBase / flexLines.length;
+        crossBase += crossSign * step / 2;
+    }
+    if (eleStyle.alignContent === 'stretch') {
+        step = 0;
+        crossBase += 0;
+    }
+    flexLines.forEach(items => {
+        let lineCrossSize = eleStyle.alignContent === 'stretch' ?
+            items.crossSpace + crossSpace / flexLines.length :
+            items.crossSpace;
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            let itemStyle = getStyle(item);
+
+            let align = itemStyle.alignSelf || eleStyle.alignItems;
+
+            if (item === null) {
+                itemStyle[crossSize] = (align === 'stretch') ?
+                    lineCrossSize : 0;
+            }
+            if (align === 'flex-start') {
+                itemStyle[crossStart] = crossBase;
+                itemStyle[crossEnd] = itemStyle[crossStart] + crossSign * itemStyle[crossSize]
+            }
+            if (align === 'flex-end') {
+                itemStyle[crossEnd] = crossBase + crossSign * lineCrossSize;
+                itemStyle[crossStart] = itemStyle[crossEnd] - crossSign * itemStyle[crossSize];
+            }
+            if (align === 'center') {
+                itemStyle[crossStart] = crossBase + crossSign * (lineCrossSize - itemStyle[crossSize]) / 2;
+                itemStyle[crossEnd] = itemStyle[crossStart] + crossSign * itemStyle[crossSize];
+            }
+
+            if (align === 'stretch') {
+                itemStyle[crossStart] = crossBase;
+                itemStyle[crossEnd] = crossBase + crossSign * ((itemStyle[crossSize] !== null && itemStyle[crossSize]))
+                itemStyle[crossSize] = crossSign * (itemStyle[crossEnd] - itemStyle[crossStart])
+            }
+        }
+        crossBase += crossSign * (lineCrossSize + step);
+    });
+    console.log(items);
+
 }
 
-modules.exports = layout;
+module.exports = layout;

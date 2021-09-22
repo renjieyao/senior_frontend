@@ -23,18 +23,23 @@ http.createServer((request, response)=>{
 `<html meta="a">
 <head>
     <style>
-body div #myid{
-    width:100px
+#container{
+    width:500px;
+    height:300px;
+    display:flex;
 }
-body div img{
-    width:80px
+#container #myid{
+    width:200px;
+}
+#container .c1{
+    flex:1;
 }
     </style>
 </head>
 <body>
-    <div>
-        <img id="myid" />
-        <img/>
+    <div id="container">
+        <div id="myid"/>
+        <div class="c1"/>
     </div>
 </body>
 </html>`)

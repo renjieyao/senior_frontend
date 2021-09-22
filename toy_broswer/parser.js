@@ -143,7 +143,7 @@ function emit(token) {
             if (top.tagName === 'style') {
                 addCSSRule(top.children[0].content);
             }
-            layout(top);
+            // layout(top);
             stack.pop();
         }
         currentTextNode = null;
