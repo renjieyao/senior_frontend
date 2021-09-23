@@ -1,5 +1,7 @@
 const net = require('net');
 const parser = require('./parser.js');
+const images = require('images');
+const render = require('./render');
 
 class TrunkedBodyParser{
     constructor(){
@@ -175,7 +177,6 @@ class Request {
                 })
             }
             connection.on('data', data => {
-                // console.log(data.toString(),'xxxxx');
                 parser.receive(data.toString());
                 if (parser.isFinished) {
                     resolve(parser.response);
@@ -218,5 +219,10 @@ void async function () {
     let response = await request.send();
 
     const dom = parser.parseHTML(response.body);
-    console.log(dom);
+
+    let viewort = images(800,600);
+
+    render(viewort,dom);
+
+    viewort.save('viewport.jpg');
 }()

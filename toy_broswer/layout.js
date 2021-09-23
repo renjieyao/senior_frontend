@@ -3,9 +3,9 @@ function getStyle(ele) {
         ele.style = {};
 
     let { style, computedStyle } = ele;
-    for (let prop of computedStyle) {
+    for (let prop in computedStyle) {
 
-        let p = computedStyle.value;
+        // let p = computedStyle.value;
         style[prop] = computedStyle[prop].value;
         if (style[prop].toString().match(/px$/) || style[prop].toString().match(/^[0-9\.]+$/)) {
             style[prop] = parseInt(style[prop]);
@@ -21,7 +21,7 @@ function layout(ele) {
 
     let eleStyle = getStyle(ele);
 
-    if (eleStyle !== 'flex')
+    if (eleStyle.display !== 'flex')
         return;
 
     let items = ele.children.filter(e => e.type === 'element');
@@ -30,7 +30,8 @@ function layout(ele) {
         return (a.order || 0) - (b.order || 0);
     })
 
-    ['width', 'height'].forEach(size => {
+    let propsArr=['width', 'height'];
+    propsArr.forEach(size => {
         if (eleStyle[size] !== 'auto' || eleStyle[size] !== ' ')
             eleStyle[size] = null;
     });
@@ -123,7 +124,7 @@ function layout(ele) {
     let crossSpace = 0;
 
     for (let i = 0; i < items.length; i++) {
-        let item = item[i];
+        let item = items[i];
         let itemStyle = getStyle(item);
 
         if (itemStyle[mainSize] === null) {
@@ -134,7 +135,7 @@ function layout(ele) {
         if (itemStyle.flex) {
             flexLine.push(item);
         } else if (eleStyle.flexWrap === 'nowarp' && isAutoMainSize) {
-            mainSpace -= itemStyle[mainStyle];
+            mainSpace -= itemStyle[mainSize];
             // get the most high of all elements
             if (itemStyle[crossSize] !== null && itemStyle[crossSize] !== (void 0)) {
                 corssSpace = Math.max(crossSpace, itemStyle[crossSize]);
@@ -148,7 +149,7 @@ function layout(ele) {
             // the rest space cannot to contain every element
             // it's time to make line break
             if (mainSpace < eleStyle.mainSize) {
-                flexline.mainSpace = mainSpace;
+                flexLine.mainSpace = mainSpace;
                 flexLine.crossSpace = corssSpace;
                 flexLine = [item];
                 flexLines.push(flexLine);
@@ -157,12 +158,12 @@ function layout(ele) {
             } else {
                 flexLine.push(item);
             }
-            mainSpace -= itemStyle[mainStyle];
+            mainSpace -= itemStyle[mainSize];
             if (itemStyle[crossSize] !== null && itemStyle[crossSize] !== (void 0)) {
                 corssSpace = Math.max(crossSpace, itemStyle[crossSize]);
             }
         }
-        flexline.mainSpace = mainSpace;
+        flexLine.mainSpace = mainSpace;
 
         if (eleStyle.flexWrap === 'nowrap' || isAutoMainSize)
             flexLine.crossSpace = (eleStyle[crossSize] !== undefined ? eleStyle[crossSize] : crossSpace)
@@ -196,7 +197,7 @@ function layout(ele) {
                     let item = items[i];
                     let itemStyle = getStyle(item);
 
-                    if (itemStyle.flex !== nulll && itemStyle.flex !== (void 0)) {
+                    if (itemStyle.flex !== null && itemStyle.flex !== (void 0)) {
                         flexTotal += itemStyle.flex;
                         continue;
                     }
@@ -255,9 +256,9 @@ function layout(ele) {
     // align-items,align-self
     if (!eleStyle[crossSize]) {
         crossSpace = 0;
-        elementStyle[crossSize] = 0;
+        eleStyle[crossSize] = 0;
         for (let i = 0; i < flexLines.length; i++) {
-            elementStyle[crossSize] = elementStyle[crossSize] + flexLines[i].crossSpace;
+            eleStyle[crossSize] = eleStyle[crossSize] + flexLines[i].crossSpace;
         }
     } else {
         crossSpace = eleStyle[crossSize];
@@ -266,8 +267,8 @@ function layout(ele) {
         }
     }
 
-    if (style.flexWrap === 'wrap-reverse') {
-        crossSpace = style[crossSize];
+    if (eleStyle.flexWrap === 'wrap-reverse') {
+        crossSpace = eleStyle[crossSize];
     } else {
         crossBase = 0;
     }
@@ -332,7 +333,7 @@ function layout(ele) {
         }
         crossBase += crossSign * (lineCrossSize + step);
     });
-    console.log(items);
+    // console.log(items);
 
 }
 
