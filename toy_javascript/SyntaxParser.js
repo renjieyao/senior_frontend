@@ -162,7 +162,7 @@ let evalutor = {
     },
     VariableDeclaration(node){
         console.log('declarate variable '+node.children[1].name);
-    }
+    },
     EOF(node){
         return null;
     }
