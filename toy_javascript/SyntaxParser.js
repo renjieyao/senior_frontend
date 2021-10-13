@@ -100,10 +100,6 @@ let start = {
 
 closure(start);
 
-let source = (`
-    let a;
-`)
-
 function parse(source) {
     let stack = [start];
     let symbolStack = [];
@@ -144,4 +140,39 @@ function parse(source) {
     return reduce();
 }
 
-parse(source);
+/****************************** *******************************/
+let source = (`
+    let a;
+`)
+
+let evalutor = {
+    Program(node){
+        return evalutor(node.children[0]);
+    },
+    StatementList(node){
+        if(node.children.length === 1){
+            return evalutor(node.children[0]);
+        }else{
+            evalutor(node.children[0]);
+            return evalutor(node.children[1]);
+        }
+    },
+    Statement(node){
+        return evalutor(node.children[0]);
+    },
+    VariableDeclaration(node){
+        console.log('declarate variable '+node.children[1].name);
+    }
+    EOF(node){
+        return null;
+    }
+}
+
+function evalutor(node){
+    if(evalutor[node.type]){
+        return evalutor[node.type];
+    }
+}
+let tree = parse(source);
+
+evalutor(tree);
