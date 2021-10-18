@@ -22,6 +22,7 @@ let syntax = {
     FunctionDeclaration: [
         ["function", "Identifier", "(", ")", "{", "StatementList", "}"]
     ],
+    // ";" is necessary for now
     ExpressionStatement: [
         ["Expression", ";"]
     ],
@@ -44,7 +45,11 @@ let syntax = {
         ["Identifier"],
     ],
     Literal: [
-        ["Number"]
+        ["NumericLiteral"],
+        ["StringLiteral"],
+        ["BooleanLiteral"],
+        ["NullLiteral"],
+        ["RegularExpression"],
     ]
 }
 
@@ -57,8 +62,8 @@ function closure(state) {
     hash[JSON.stringify(state)] = state;
     for (let symbol in state) {
         // filter reduceType
-        if(symbol.match(/^\$/))
-            return;
+        if (symbol.match(/^\$/))
+            continue;
         // Enqueue
         queue.push(symbol);
     }
@@ -83,8 +88,8 @@ function closure(state) {
 
     for (let symbol in state) {
         // filter reduceType
-        if(symbol.match(/^\$/))
-            return;
+        if (symbol.match(/^\$/))
+            continue;
         if (hash[JSON.stringify(state[symbol])])
             state[symbol] = hash[JSON.stringify(state[symbol])];
         else closure(state[symbol]);
@@ -103,12 +108,12 @@ closure(start);
 function parse(source) {
     let stack = [start];
     let symbolStack = [];
-    function reduce(){
-        let state = stack[stack.length-1];
+    function reduce() {
+        let state = stack[stack.length - 1];
 
-        if(state.$reduceType){
+        if (state.$reduceType) {
             let children = [];
-            for(let i = 0;i<state.$reduceLength;i++){
+            for (let i = 0; i < state.$reduceLength; i++) {
                 stack.pop()
                 children.push(symbolStack.pop());
             }
@@ -116,14 +121,14 @@ function parse(source) {
             // create a non-terminal symbol and shift it
             return {
                 type: state.$reduceType,
-                children:children.reverse(),
+                children: children.reverse(),
             }
-        }else{
+        } else {
             throw new Error('unexpected token')
         }
-        
+
     }
-    function shift(symbol){
+    function shift(symbol) {
         let state = stack[stack.length - 1];
         if (symbol.type in state) {
             stack.push(state[symbol.type]);
@@ -141,38 +146,123 @@ function parse(source) {
 }
 
 /****************************** *******************************/
-let source = (`
-    let a;
-`)
 
-let evalutor = {
-    Program(node){
+let evalutorTree = {
+    Program(node) {
         return evalutor(node.children[0]);
     },
-    StatementList(node){
-        if(node.children.length === 1){
+    StatementList(node) {
+        if (node.children.length === 1) {
             return evalutor(node.children[0]);
-        }else{
+        } else {
             evalutor(node.children[0]);
             return evalutor(node.children[1]);
         }
     },
-    Statement(node){
+    Statement(node) {
         return evalutor(node.children[0]);
     },
-    VariableDeclaration(node){
-        console.log('declarate variable '+node.children[1].name);
+    VariableDeclaration(node) {
+        console.log('declarate variable ' + node.children[1].name);
     },
-    EOF(node){
-        return null;
+    ExpressionStatement(node) {
+        return evalutor(node.children[0]);
+    },
+    Expression(node) {
+        return evalutor(node.children[0]);
+    },
+    AdditiveExpression(node) {
+        if (node.children.length === 1)
+            return evalutor(node.children[0]);
+        else {
+            // TODO
+        }
+    },
+    MultiplicativeExpression(node) {
+        if (node.children.length === 1)
+            return evalutor(node.children[0]);
+        else {
+            // TODO
+        }
+    },
+    PrimaryExpression(node) {
+        if (node.children.length === 1)
+            return evalutor(node.children[0]);
+    },
+    Literal(node) {
+        return evalutor(node.children[0]);
+    },
+    NumericLiteral(node) {
+        let valueStr = node.value;
+        let value = 0;
+        let len = valueStr.length;
+        let n = 10;
+        if (valueStr.match(/^0b/)) {
+            n = 2;
+            len -= 2;
+        } else if (valueStr.match(/^0o/)) {
+            n = 8;
+            len -= 2;
+        } else if (valueStr.match(/^0x/)) {
+            n = 16;
+            len -= 2;
+        }
+
+        while (len--) {
+            let c = valueStr.charCodeAt(valueStr.length - 1 - len);
+
+            if(c >= "A".charCodeAt(0)){
+                c = c - "A".charCodeAt(0) + 10;
+            }else if(c >= "a".charCodeAt(0)){
+                c = c - "a".charCodeAt(0) + 10;
+            }else if(c >= "0".charCodeAt(0)){
+                c = c - "0".charCodeAt(0);
+            }
+            // charCodeAt() returns an integer between 0 and 65535
+            // representing the UTF-16 code unit at the given index.
+            value = value * n + c;
+        }
+        return value;
+    },
+    StringLiteral(node){
+        let str = node.value;
+        let result = [];
+        for(let i = 1;i < str.length-1;i++){
+            if(str[i] === "\\"){
+                ++i;
+                let c = str[i];
+                let map = {
+                    "\"":"\"",
+                    "\'":"\'",
+                    "\\":"\\",
+                    "0":String.fromCharCode(0x0000),
+                    "b":String.fromCharCode(0x0008),
+                    "t":String.fromCharCode(0x0009),
+                    "n":String.fromCharCode(0x000A),
+                    "v":String.fromCharCode(0x000B),
+                    "f":String.fromCharCode(0x000C),
+                    "r":String.fromCharCode(0x000D),
+                }
+                if(c in map){
+                    result.push(map[c]);
+                }else{
+                    result.push(c);
+                }
+            }else{
+                result.push(str[i]);
+            }
+        }
+        
+        return result.join();
     }
 }
 
-function evalutor(node){
-    if(evalutor[node.type]){
-        return evalutor[node.type];
+function evalutor(node) {
+    if (evalutorTree[node.type]) {
+        return evalutorTree[node.type](node);
     }
 }
-let tree = parse(source);
 
-evalutor(tree);
+window.js={
+    parse,evalutor
+}

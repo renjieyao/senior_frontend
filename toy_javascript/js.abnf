@@ -16,7 +16,7 @@ Token ::= Literal
     | Keywords 
     | Identifier 
     | Punctuator
-Literal ::= NumberLiteral 
+Literal ::= NumericLiteral 
     | BooleanLiteral
     | StringLiteral
     | NullLiteral

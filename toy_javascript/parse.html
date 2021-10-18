@@ -1,1 +1,23 @@
-<script type="module" src="./SyntaxParser.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module" src="./SyntaxParser.js"></script>
+</head>
+
+<body>
+    <div>
+        <textarea name="userInput" id="userInput" cols="30" rows="10"></textarea>
+        <button id="runButton">run</button>
+    </div>
+    <script>
+        document.getElementById('runButton').addEventListener('click',()=>{
+            let source = document.getElementById('userInput').value;
+            debugger
+            console.log(js.evalutor(js.parse(source)));
+        })
+    </script>
+</body>
+</html>
