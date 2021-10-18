@@ -49,8 +49,22 @@ let syntax = {
         ["StringLiteral"],
         ["BooleanLiteral"],
         ["NullLiteral"],
-        ["RegularExpression"],
-    ]
+        ["RegularExpressionLiteral"],
+        ["ObjectLiteral"],
+        ["ArrayLiteral"],
+    ],
+    ObjectLiteral:[
+        ["{","}"],
+        ["{","PropertyList","}"]
+    ],
+    PropertyList:[
+        ["Property"],
+        ["PropertyList",",","Property"]
+    ],
+    Property:[
+        ["StringLiteral",":","AdditiveExpression"],
+        ["Identifier",":","AdditiveExpression"],
+    ],
 }
 
 let hash = {
@@ -254,6 +268,38 @@ let evalutorTree = {
         }
         
         return result.join();
+    },
+    ObjectLiteral(node){
+        if(node.children.length === 2){
+            return {}
+        }else if(node.children.length === 3){
+            let obj = new Map();
+            this.PropertyList(node.children[1],obj);
+            // obj.prototype=
+            return obj;
+        }
+    },
+    PropertyList(node,object){
+        if(node.children.length === 1){
+            this.Property(node.children[0],object);
+        }else{
+            this.PropertyList(node.children[0],object);
+            this.Property(node.children[2],object);
+        }
+    },
+    Property(node,object){
+        let name;
+        if(node.children[0].type === "Identifier"){
+            name = node.children[0].name;
+        }else if(node.children[0].type === "StringLiteral"){
+            name = evalutor(node.children[0])
+        }
+        object.set(name,{
+            value: evalutor(node.children[2]),
+            wirtable: true,
+            enumerable: true,
+            configurable: true,
+        })
     }
 }
 
