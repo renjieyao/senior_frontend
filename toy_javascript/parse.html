@@ -12,10 +12,15 @@
         <textarea name="userInput" id="userInput" cols="30" rows="10"></textarea>
         <button id="runButton">run</button>
     </div>
-    <script>
-        document.getElementById('runButton').addEventListener('click',()=>{
+    <script type="module">
+        import {Evalutor} from './evalutor.js';
+        import {parse} from './SyntaxParser.js';
+
+        document.getElementById('runButton').addEventListener('click',event => {
             let source = document.getElementById('userInput').value;
-            console.log(js.evalutor(js.parse(source)));
+            let r = new Evalutor().evalute(parse(source));
+            console.log(r);
+            
         })
     </script>
 </body>

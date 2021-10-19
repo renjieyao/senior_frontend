@@ -65,9 +65,9 @@ export function* scan(str) {
             BooleanLiteral: /true|false/,
             StringLiteral: /\"(?:[^"\n]|\\[\s\S])*\"|\'(?:[^'\n]|\\[\s\S])*\'/,
             NullLiteral: /null/,
-            Keywords: /if|else|for|function|let|var/,
+            Keywords: /if|else|for|function|let|var|new/,
             Identifier: /[a-zA-Z_$][a-zA-Z0-9_$]*/,
-            Punctuator: /\;|\.|\+|\+\+|\,|\:|\{|\}|\(|\)|\=|\<|\>|\=\=|\=\>|\*|\[|\]/,
+            Punctuator: /\|\||\&\&|\;|\.|\+|\+\+|\,|\:|\{|\}|\(|\)|\=|\<|\>|\=\=|\=\>|\*|\[|\]/,
         },
         "g",
         "InputElement"
@@ -76,46 +76,46 @@ export function* scan(str) {
     while (regexp.lastIndex < str.length) {
         let r = regexp.exec(str);
 
-        if(r.Whitespace){
+        if (r.Whitespace) {
 
-        }else if(r.LineTerminator){
+        } else if (r.LineTerminator) {
 
-        }else if(r.Comments){
+        } else if (r.Comments) {
 
-        }else if(r.NumericLiteral){
+        } else if (r.NumericLiteral) {
             yield {
                 type: "NumericLiteral",
                 value: r[0],
             }
-        }else if(r.BooleanLiteral){
+        } else if (r.BooleanLiteral) {
             yield {
                 type: "BooleanLiteral",
                 value: r[0],
             }
-        }else if(r.StringLiteral){
+        } else if (r.StringLiteral) {
             yield {
                 type: "StringLiteral",
                 value: r[0],
             }
-        }else if(r.NullLiteral){
+        } else if (r.NullLiteral) {
             yield {
                 type: "NullLiteral",
                 value: null,
             }
-        }else if(r.Identifier){
+        } else if (r.Identifier) {
             yield {
                 type: "Identifier",
                 name: r[0],
             }
-        }else if(r.Keywords){
+        } else if (r.Keywords) {
             yield {
                 type: r[0],
             }
-        }else if(r.Punctuator){
+        } else if (r.Punctuator) {
             yield {
                 type: r[0],
             }
-        }else{
+        } else {
             throw new Error("unexpected token" + r[0]);
         }
 

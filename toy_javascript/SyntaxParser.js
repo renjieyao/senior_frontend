@@ -29,9 +29,17 @@ let syntax = {
     Expression: [
         ["AssignmentExpression"]
     ],
-    AssignmentExpression:[
-        ["Identifier","=","AdditiveExpression"],
-        ["AdditiveExpression"]
+    AssignmentExpression: [
+        ["LeftSideHandExpression", "=", "LogicalORExpression"],
+        ["LogicalORExpression"]
+    ],
+    LogicalORExpression: [
+        ["LogicalANDExpression"],
+        ["LogicalORExpression", "||", "LogicalANDExpression"]
+    ],
+    LogicalANDExpression: [
+        ["AdditiveExpression"],
+        ["LogicalANDExpression", "&&", "AdditiveExpression"]
     ],
     AdditiveExpression: [
         ["MultiplicativeExpression"],
@@ -39,9 +47,26 @@ let syntax = {
         ["AdditiveExpression", "-", "MultiplicativeExpression"],
     ],
     MultiplicativeExpression: [
+        ["LeftSideHandExpression"],
+        ["MultiplicativeExpression", "*", "LeftSideHandExpression"],
+        ["MultiplicativeExpression", "/", "LeftSideHandExpression"],
+    ],
+    LeftSideHandExpression: [
+        ["CallExpression"],
+        ["NewExpression"]
+    ],
+    CallExpression: [
+        ["MemberExpression", "Arguments"],
+        ["CallExpression", "Arguments"],
+    ],
+    NewExpression: [
+        ["MemberExpression"],
+        ["new", "NewExpression"]
+    ],
+    MemberExpression: [
         ["PrimaryExpression"],
-        ["MultiplicativeExpression", "*", "PrimaryExpression"],
-        ["MultiplicativeExpression", "/", "PrimaryExpression"],
+        ["PrimaryExpression", ".", "Identifier"],
+        ["PrimaryExpression", "[", "Expression", "]"],
     ],
     PrimaryExpression: [
         ["(", "Expression", ")"],
@@ -57,17 +82,17 @@ let syntax = {
         ["ObjectLiteral"],
         ["ArrayLiteral"],
     ],
-    ObjectLiteral:[
-        ["{","}"],
-        ["{","PropertyList","}"]
+    ObjectLiteral: [
+        ["{", "}"],
+        ["{", "PropertyList", "}"]
     ],
-    PropertyList:[
+    PropertyList: [
         ["Property"],
-        ["PropertyList",",","Property"]
+        ["PropertyList", ",", "Property"]
     ],
-    Property:[
-        ["StringLiteral",":","AdditiveExpression"],
-        ["Identifier",":","AdditiveExpression"],
+    Property: [
+        ["StringLiteral", ":", "AdditiveExpression"],
+        ["Identifier", ":", "AdditiveExpression"],
     ],
 }
 
@@ -123,7 +148,7 @@ let start = {
 
 closure(start);
 
-function parse(source) {
+export function parse(source) {
     let stack = [start];
     let symbolStack = [];
     function reduce() {
@@ -161,218 +186,4 @@ function parse(source) {
         shift(symbol);
     }
     return reduce();
-}
-
-/****************************** *******************************/
-class Realm{
-    constructor(){
-        this.global = new Map(),
-        this.Object = new Map(),
-        this.Object.call = function(){
-
-        },
-        this.Object_prototype = new Map()
-    }
-}
-
-class EnvironmentRecord{
-    constructor(){
-        this.thisValue,
-        this.variables = new Map(),
-        this.outer = null
-    }
-}
-
-class ExecutionContext{
-    constructor(){
-        this.lexicalEnvironment = {a:2},
-        this.variableEnvironment = this.variableEnvironment,
-        this.realm = {}
-    }
-}
-
-class Reference{
-    constructor(object,property){
-        this.object = object;
-        this.property = property;
-    }
-    set(value){
-        this.object[this.property] = value;
-    }
-    get(){
-        return this.object[this.property];
-    }
-}
-
-
-let evalutorTree = {
-    Program(node) {
-        return evalutor(node.children[0]);
-    },
-    StatementList(node) {
-        if (node.children.length === 1) {
-            return evalutor(node.children[0]);
-        } else {
-            evalutor(node.children[0]);
-            return evalutor(node.children[1]);
-        }
-    },
-    Statement(node) {
-        return evalutor(node.children[0]);
-    },
-    VariableDeclaration(node) {
-        let runningExecutionContext = ecs[ecs.length - 1];
-        runningExecutionContext.variableEnvironment[node.children[1].name];
-    },
-    ExpressionStatement(node) {
-        return evalutor(node.children[0]);
-    },
-    Expression(node) {
-        return evalutor(node.children[0]);
-    },
-    AdditiveExpression(node) {
-        if (node.children.length === 1)
-            return evalutor(node.children[0]);
-        else {
-            // TODO
-        }
-    },
-    MultiplicativeExpression(node) {
-        if (node.children.length === 1)
-            return evalutor(node.children[0]);
-        else {
-            // TODO
-        }
-    },
-    PrimaryExpression(node) {
-        if (node.children.length === 1)
-            return evalutor(node.children[0]);
-    },
-    Literal(node) {
-        return evalutor(node.children[0]);
-    },
-    NumericLiteral(node) {
-        let valueStr = node.value;
-        let value = 0;
-        let len = valueStr.length;
-        let n = 10;
-        if (valueStr.match(/^0b/)) {
-            n = 2;
-            len -= 2;
-        } else if (valueStr.match(/^0o/)) {
-            n = 8;
-            len -= 2;
-        } else if (valueStr.match(/^0x/)) {
-            n = 16;
-            len -= 2;
-        }
-
-        while (len--) {
-            let c = valueStr.charCodeAt(valueStr.length - 1 - len);
-
-            if(c >= "A".charCodeAt(0)){
-                c = c - "A".charCodeAt(0) + 10;
-            }else if(c >= "a".charCodeAt(0)){
-                c = c - "a".charCodeAt(0) + 10;
-            }else if(c >= "0".charCodeAt(0)){
-                c = c - "0".charCodeAt(0);
-            }
-            // charCodeAt() returns an integer between 0 and 65535
-            // representing the UTF-16 code unit at the given index.
-            value = value * n + c;
-        }
-        return value;
-    },
-    StringLiteral(node){
-        let str = node.value;
-        let result = [];
-        for(let i = 1;i < str.length-1;i++){
-            if(str[i] === "\\"){
-                ++i;
-                let c = str[i];
-                let map = {
-                    "\"":"\"",
-                    "\'":"\'",
-                    "\\":"\\",
-                    "0":String.fromCharCode(0x0000),
-                    "b":String.fromCharCode(0x0008),
-                    "t":String.fromCharCode(0x0009),
-                    "n":String.fromCharCode(0x000A),
-                    "v":String.fromCharCode(0x000B),
-                    "f":String.fromCharCode(0x000C),
-                    "r":String.fromCharCode(0x000D),
-                }
-                if(c in map){
-                    result.push(map[c]);
-                }else{
-                    result.push(c);
-                }
-            }else{
-                result.push(str[i]);
-            }
-        }
-        
-        return result.join();
-    },
-    ObjectLiteral(node){
-        if(node.children.length === 2){
-            return {}
-        }else if(node.children.length === 3){
-            let obj = new Map();
-            this.PropertyList(node.children[1],obj);
-            // obj.prototype=
-            return obj;
-        }
-    },
-    PropertyList(node,object){
-        if(node.children.length === 1){
-            this.Property(node.children[0],object);
-        }else{
-            this.PropertyList(node.children[0],object);
-            this.Property(node.children[2],object);
-        }
-    },
-    Property(node,object){
-        let name;
-        if(node.children[0].type === "Identifier"){
-            name = node.children[0].name;
-        }else if(node.children[0].type === "StringLiteral"){
-            name = evalutor(node.children[0])
-        }
-        object.set(name,{
-            value: evalutor(node.children[2]),
-            wirtable: true,
-            enumerable: true,
-            configurable: true,
-        })
-    },
-    Identifier(node){
-        let runningExecutionContext = ecs[ecs.length - 1];
-        return new Reference(
-            runningExecutionContext.lexicalEnvironment,
-            node.name
-        )
-    },
-    AssignmentExpression(node){
-        if(node.children.length === 1){
-            return evalutor(node.children[0]);
-        }
-        let left = evalutor(node.children[0]);
-        let right = evalutor(node.children[2]);
-        left.set(right);
-    }
-}
-
-let realm = new Realm();
-let ecs = [new ExecutionContext]
-
-function evalutor(node) {
-    if (evalutorTree[node.type]) {
-        let result = evalutorTree[node.type](node);
-        return result;
-    }
-}
-
-window.js={
-    parse,evalutor
 }
