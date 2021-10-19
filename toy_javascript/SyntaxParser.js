@@ -27,6 +27,10 @@ let syntax = {
         ["Expression", ";"]
     ],
     Expression: [
+        ["AssignmentExpression"]
+    ],
+    AssignmentExpression:[
+        ["Identifier","=","AdditiveExpression"],
         ["AdditiveExpression"]
     ],
     AdditiveExpression: [
@@ -160,6 +164,46 @@ function parse(source) {
 }
 
 /****************************** *******************************/
+class Realm{
+    constructor(){
+        this.global = new Map(),
+        this.Object = new Map(),
+        this.Object.call = function(){
+
+        },
+        this.Object_prototype = new Map()
+    }
+}
+
+class EnvironmentRecord{
+    constructor(){
+        this.thisValue,
+        this.variables = new Map(),
+        this.outer = null
+    }
+}
+
+class ExecutionContext{
+    constructor(){
+        this.lexicalEnvironment = {a:2},
+        this.variableEnvironment = this.variableEnvironment,
+        this.realm = {}
+    }
+}
+
+class Reference{
+    constructor(object,property){
+        this.object = object;
+        this.property = property;
+    }
+    set(value){
+        this.object[this.property] = value;
+    }
+    get(){
+        return this.object[this.property];
+    }
+}
+
 
 let evalutorTree = {
     Program(node) {
@@ -177,7 +221,8 @@ let evalutorTree = {
         return evalutor(node.children[0]);
     },
     VariableDeclaration(node) {
-        console.log('declarate variable ' + node.children[1].name);
+        let runningExecutionContext = ecs[ecs.length - 1];
+        runningExecutionContext.variableEnvironment[node.children[1].name];
     },
     ExpressionStatement(node) {
         return evalutor(node.children[0]);
@@ -300,12 +345,31 @@ let evalutorTree = {
             enumerable: true,
             configurable: true,
         })
+    },
+    Identifier(node){
+        let runningExecutionContext = ecs[ecs.length - 1];
+        return new Reference(
+            runningExecutionContext.lexicalEnvironment,
+            node.name
+        )
+    },
+    AssignmentExpression(node){
+        if(node.children.length === 1){
+            return evalutor(node.children[0]);
+        }
+        let left = evalutor(node.children[0]);
+        let right = evalutor(node.children[2]);
+        left.set(right);
     }
 }
 
+let realm = new Realm();
+let ecs = [new ExecutionContext]
+
 function evalutor(node) {
     if (evalutorTree[node.type]) {
-        return evalutorTree[node.type](node);
+        let result = evalutorTree[node.type](node);
+        return result;
     }
 }
 
