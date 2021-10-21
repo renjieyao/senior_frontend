@@ -167,4 +167,59 @@ export class Evalutor{
         let right = this.evalute(node.children[2]);
         left.set(right);
     }
+    LogicalORExpression(node){
+        if(node.children.length === 1){
+            return this.evalute(node.children[0]);
+        }
+        let result = this.evalute(node.children[0]);
+        if(result){
+            return result;
+        }else{
+            return this.evalute(node.children[2]);
+        }
+    }
+    LogicalANDExpression(node){
+        if(node.children.length === 1){
+            return this.evalute(node.children[0]);
+        }
+        let result = this.evalute(node.children[0]);
+        if(result){
+            return result;
+        }else{
+            return this.evalute(node.children[2]);
+        }
+    }
+    LeftSideHandExpression(node){
+        return this.evalute(node.children[0]);
+    }
+    CallExpression(node){
+        if(node.children.length === 1){
+            return this.evalute(node.children[0]);
+        }
+        if(node.children.length === 2){
+            let func = this.evalute(node.children[0]);
+            let argus = this.evalute(node.children[1]);
+            return func.call(argus);
+        }
+    }
+    NewExpression(node){
+        if(node.children.length === 1){
+            return this.evalute(node.children[0]);
+        }
+
+    }
+    MemberExpression(node){
+        if(node.children.length === 1){
+            return this.evalute(node.children[0]);
+        }
+        if(node.children.length === 3){
+            let obj = this.evalute(node.children[0]).get();
+            let prop = obj.get(node.children[2].name);
+            if("value" in prop)
+                return prop.value;
+            if("get" in prop){
+                return prop.get.call(obj);
+            }
+        }
+    }
 }
