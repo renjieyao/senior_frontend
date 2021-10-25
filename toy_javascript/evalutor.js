@@ -1,4 +1,16 @@
-import {Realm, Reference, EnvironmentRecord, ExecutionContext} from './runTime.js';
+import {
+    Realm, 
+    Reference, 
+    EnvironmentRecord, 
+    ExecutionContext,
+    JSObject,
+    JSString,
+    JSNumber,
+    JSNull,
+    JSUndefined,
+    JSSymbol,
+    JSBoolean,
+} from './runTime.js';
 
 export class Evalutor{
     constructor(){
@@ -28,7 +40,7 @@ export class Evalutor{
     }
     VariableDeclaration(node) {
         let runningExecutionContext = this.ecs[this.ecs.length - 1];
-        runningExecutionContext.variableEnvironment[node.children[1].name];
+        runningExecutionContext.variableEnvironment[node.children[1].name] = new JSUndefined;
     }
     ExpressionStatement(node) {
         return this.evalute(node.children[0]);
@@ -36,11 +48,39 @@ export class Evalutor{
     Expression(node) {
         return this.evalute(node.children[0]);
     }
+    IfStatement(node){
+        let condition = this.evalute(node.children[2]);
+        if(condition instanceof Reference)
+            condition = condition.get();
+        if(condition.toBoolean().value)
+            return this.evalute(node.children[4]);
+    }
+    WhileStatement(node){
+        while(true){
+            let condition = this.evalute(node.children[2]);
+            if(condition instanceof Reference)
+                condition = condition.get();
+            if(condition.toBoolean().value){
+                this.evalute(node.children[4]);
+            }else{
+                break;
+            }
+        }
+    }
     AdditiveExpression(node) {
         if (node.children.length === 1)
             return this.evalute(node.children[0]);
         else {
-            // TODO
+            let left = this.evalute(node.children[0]);
+            let right = this.evalute(node.children[0]);
+            if(left instanceof Reference)
+                left = left.get();
+            if(right instanceof Reference)
+                right = right.get();
+            if(node.children[1].type === "+")
+                return left + right;
+            if(node.children[1].type === "-")
+                return new JSNumber(left.value - right.value);
         }
     }
     MultiplicativeExpression(node) {
@@ -56,6 +96,15 @@ export class Evalutor{
     }
     Literal(node) {
         return this.evalute(node.children[0]);
+    }
+    BooleanLiteral(node){
+        if(node.value === "true")
+            return new JSBoolean(true);
+        else if(node.value === "false")
+            return new JSBoolean(false);
+    }
+    NullLiteral(node){
+
     }
     NumericLiteral(node) {
         let valueStr = node.value;
@@ -87,7 +136,7 @@ export class Evalutor{
             // representing the UTF-16 code unit at the given index.
             value = value * n + c;
         }
-        return value;
+        return new JSNumber(node.value);
     }
     StringLiteral(node) {
         let str = node.value;
@@ -118,13 +167,13 @@ export class Evalutor{
             }
         }
 
-        return result.join();
+        return new JSString(result);
     }
     ObjectLiteral(node) {
         if (node.children.length === 2) {
             return {}
         } else if (node.children.length === 3) {
-            let obj = new Map();
+            let obj = new JSObject;
             this.PropertyList(node.children[1], obj);
             // obj.prototype=
             return obj;
