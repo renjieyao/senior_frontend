@@ -35,6 +35,11 @@ export class Evalutor{
             return this.evalute(node.children[1]);
         }
     }
+    Block(node){
+        if(node.children.length === 2)
+            return;
+        return this.evalute(node.children[1]);
+    }
     Statement(node) {
         return this.evalute(node.children[0]);
     }
