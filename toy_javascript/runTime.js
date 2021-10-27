@@ -189,3 +189,11 @@ export class EnvironmentRecord {
         this.outer = null
     }
 }
+
+export class CompletionRecord {
+    constructor(type, value, target) {
+        this.type = type || "normal",
+        this.value = value || new JSUndefined,
+        this.target = target || null
+    }
+}

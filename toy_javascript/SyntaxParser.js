@@ -13,6 +13,14 @@ let syntax = {
         ["VariableDeclaration"],
         ["FunctionDeclaration"],
         ["Block"],
+        ["BreakStatement"],
+        ["ContinueStatement"]
+    ],
+    BreakStatement:[
+        ["break",";"]
+    ],
+    ContinueStatement:[
+        ["continue",";"]
     ],
     Block:[
         ["{","StatementList","}"],

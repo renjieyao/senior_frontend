@@ -10,6 +10,7 @@ import {
     JSUndefined,
     JSSymbol,
     JSBoolean,
+    CompletionRecord,
 } from './runTime.js';
 
 export class Evalutor{
@@ -31,8 +32,11 @@ export class Evalutor{
         if (node.children.length === 1) {
             return this.evalute(node.children[0]);
         } else {
-            this.evalute(node.children[0]);
-            return this.evalute(node.children[1]);
+            let record = this.evalute(node.children[0]);
+            if(record.type === "normal")
+                return this.evalute(node.children[1]);
+            else
+                return record;
         }
     }
     Block(node){
@@ -46,12 +50,19 @@ export class Evalutor{
     VariableDeclaration(node) {
         let runningExecutionContext = this.ecs[this.ecs.length - 1];
         runningExecutionContext.variableEnvironment[node.children[1].name] = new JSUndefined;
+        return new CompletionRecord("normal",new JSUndefined);
     }
     ExpressionStatement(node) {
-        return this.evalute(node.children[0]);
+        return new CompletionRecord("normal",this.evalute(node.children[0]));
     }
     Expression(node) {
         return this.evalute(node.children[0]);
+    }
+    BreakStatement(node){
+        return new CompletionRecord("break");
+    }
+    ContinueStatement(node){
+        return new CompletionRecord("continue");
     }
     IfStatement(node){
         let condition = this.evalute(node.children[2]);
@@ -66,9 +77,13 @@ export class Evalutor{
             if(condition instanceof Reference)
                 condition = condition.get();
             if(condition.toBoolean().value){
-                this.evalute(node.children[4]);
+                let record = this.evalute(node.children[4]);
+                if(record.type === "continue")
+                    continue;
+                if(record.type === "break")
+                    return new CompletionRecord("normal");
             }else{
-                break;
+                return new CompletionRecord("normal");
             }
         }
     }
