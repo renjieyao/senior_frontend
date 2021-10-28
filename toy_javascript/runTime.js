@@ -1,11 +1,11 @@
 export class Realm {
     constructor() {
-        this.global = new Map(),
-        this.Object = new Map(),
+        this.global = new Map();
+        this.Object = new Map();
         this.Object.call = function () {
 
-        },
-        this.Object_prototype = new Map()
+        };
+        this.Object_prototype = new Map();
     }
 }
 
@@ -24,10 +24,10 @@ export class Reference {
         this.property = property;
     }
     set(value) {
-        this.object[this.property] = value;
+        this.object.set(this.property, value);
     }
     get() {
-        return this.object[this.property];
+        return this.object.get(this.property);
     }
 }
 
@@ -131,11 +131,24 @@ export class JSObject extends JSValue{
         this.properties = new Map();
         this.prototype = null;
     }
-    setProperty(name,attributes){
+    get(name){
+        // TODO:prototype chain && getter
+        return this.getProperty(name).value;
+    }
+    set(name,value){
+        // TODO:writable etc.
+        this.setProperty(name,{
+            value,
+            enumerable: true,
+            writable: true,
+            configurable: true,
+        })
+    }
+    setProperty(name,attributes){ 
         this.properties.set(name,attributes);
     }
-    getProperty(){
-        // TODO
+    getProperty(name){
+        return this.properties.get(name);
     }
     setPrototype(proto){
         this.proto = proto;
@@ -183,17 +196,56 @@ export class JSSymbol extends JSValue{
 }
 
 export class EnvironmentRecord {
-    constructor() {
-        this.thisValue,
-        this.variables = new Map(),
-        this.outer = null
+    constructor(outer) {
+        // this.thisValue;
+        this.variables = new Map();
+        this.outer = outer;
+    }
+    add(name){
+        this.variables.set(name,new JSUndefined);
+    }
+    get(name){
+        if(this.variables.has(name)){
+            return this.variables.get(name);
+        }else if(this.outer){
+            return this.outer.get(name);
+        }else{
+            return new JSUndefined;
+        }
+    }
+    set(name,value = new JSUndefined){
+        if(this.variables.has(name)){
+            return this.variables.set(name,value);
+        }else if(this.outer){
+            return this.outer.set(name,value);
+        }else{
+            return this.variables.set(name,value);
+        }
+    }
+}
+
+export class ObjectEnvironmentRecord {
+    constructor(object,outer) {
+        this.object = object;
+        this.outer = outer;
+    }
+    add(name){
+        this.object.set(name,new JSUndefined);
+    }
+    get(name){
+        return this.object.get(name);
+        // TODO:with statement need outer
+    }
+    set(name,value = new JSUndefined){
+        this.object.set(name,value);
+        // TODO:with statement need outer
     }
 }
 
 export class CompletionRecord {
     constructor(type, value, target) {
-        this.type = type || "normal",
-        this.value = value || new JSUndefined,
-        this.target = target || null
+        this.type = type || "normal";
+        this.value = value || new JSUndefined;
+        this.target = target || null;
     }
 }

@@ -2,6 +2,7 @@ import {
     Realm, 
     Reference, 
     EnvironmentRecord, 
+    ObjectEnvironmentRecord,
     ExecutionContext,
     JSObject,
     JSString,
@@ -16,8 +17,16 @@ import {
 export class Evalutor{
     constructor(){
         this.realm = new Realm();
-        this.globalObject = {}
-        this.ecs = [new ExecutionContext(this.realm,this.globalObject)];
+        this.globalObject = new JSObject();
+        this.globalObject.set("log",new JSObject);
+        this.globalObject.get("log").call = args => {
+            console.log(args);
+        }
+        this.ecs = [new ExecutionContext(
+            this.realm,
+            new ObjectEnvironmentRecord(this.globalObject),
+            new ObjectEnvironmentRecord(this.globalObject)
+        )];
     }
     evalute(node) {
         if (this[node.type]) {
@@ -39,21 +48,53 @@ export class Evalutor{
                 return record;
         }
     }
+    Arguments(node){
+        if(node.children.length === 2){
+            return [];
+        }else if(node.children.length === 3){
+            return this.evalute(node.children[1]);
+        }
+    }
+    ArgumentList(node){
+        if(node.children.length === 1){
+            let result = this.evalute(node.children[0]);
+            if(result instanceof Reference)
+                result = result.get();
+            return [result];
+        }else if(node.children.length === 2){
+            let result = this.evalute(node.children[2]);
+            if(result instanceof Reference)
+                result = result.get();
+            return this.evalute(node.children[0]).concat(result);
+        }
+    }
     Block(node){
         if(node.children.length === 2)
             return;
-        return this.evalute(node.children[1]);
+        let runningEC = this.ecs[this.ecs.length-1];
+        let newEC = new ExecutionContext(
+            runningEC.realm,
+            new EnvironmentRecord(runningEC.lexicalEnvironment),
+            runningEC.lexicalEnvironment
+        )
+        this.ecs.push(newEC);
+        let result = this.evalute(node.children[1]);
+        this.ecs.pop(newEC);
+        return result;
     }
     Statement(node) {
         return this.evalute(node.children[0]);
     }
     VariableDeclaration(node) {
         let runningExecutionContext = this.ecs[this.ecs.length - 1];
-        runningExecutionContext.variableEnvironment[node.children[1].name] = new JSUndefined;
+        runningExecutionContext.lexicalEnvironment.add(node.children[1].name);
         return new CompletionRecord("normal",new JSUndefined);
     }
     ExpressionStatement(node) {
-        return new CompletionRecord("normal",this.evalute(node.children[0]));
+        let result = this.evalute(node.children[0]);
+        if(result instanceof Reference)
+            result = result.get();
+        return new CompletionRecord("normal",result);
     }
     Expression(node) {
         return this.evalute(node.children[0]);
@@ -98,7 +139,7 @@ export class Evalutor{
             if(right instanceof Reference)
                 right = right.get();
             if(node.children[1].type === "+")
-                return left + right;
+                return new JSNumber(left.value + right.value);
             if(node.children[1].type === "-")
                 return new JSNumber(left.value - right.value);
         }
@@ -266,7 +307,7 @@ export class Evalutor{
             return this.evalute(node.children[0]);
         }
         if(node.children.length === 2){
-            let func = this.evalute(node.children[0]);
+            let func = this.evalute(node.children[0]).get();
             let argus = this.evalute(node.children[1]);
             return func.call(argus);
         }

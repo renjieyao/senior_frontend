@@ -10,10 +10,14 @@
 <body>
     <div>
         <textarea name="userInput" id="userInput" cols="30" rows="10">
-a = 1;
-while(a)
-    a = a - 1;
-a;
+{
+    let a;
+    a=1;
+    {
+        a=a+1;
+    }
+    a;
+}
         </textarea>
         <button id="runButton">run</button>
     </div>
