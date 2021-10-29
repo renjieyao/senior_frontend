@@ -28,6 +28,19 @@ export class Evalutor{
             new ObjectEnvironmentRecord(this.globalObject)
         )];
     }
+    // module must be based on file system
+    evaluteModule(node){
+        let globalEC = this.ecs[0];
+        let newEC = [new ExecutionContext(
+            this.realm,
+            new EnvironmentRecord(globalEC.lexicalEnvironment),
+            new EnvironmentRecord(globalEC.lexicalEnvironment)
+        )];
+        this.ecs.push(NewEC);
+        let result = this.evalute(node);
+        this.ecs.pop();
+        return result;
+    }
     evalute(node) {
         if (this[node.type]) {
             let result = this[node.type](node);
@@ -36,6 +49,26 @@ export class Evalutor{
     }
     Program(node) {
         return this.evalute(node.children[0]);
+    }
+    FunctionDeclaration(node){
+        let name = node.children[1].name;
+        let code = node.children[node.children.length -2];
+        let func = new JSObject;
+        func.call = args =>{
+            let newEC = new ExecutionContext(
+                this.realm,
+                new EnvironmentRecord(func.environment),
+                new EnvironmentRecord(func.environment),
+            );
+            this.ecs.push(newEC);
+            this.evalute(node);
+            this.ecs.pop();
+        }
+        let runningEC = this.ecs[this.ecs.length -1];
+        runningEC.lexicalEnvironment.add(name);
+        runningEC.lexicalEnvironment.set(name,func);
+        func.environment = runningEC.lexicalEnvironment;
+        return new CompletionRecord("normal");
     }
     StatementList(node) {
         if (node.children.length === 1) {
