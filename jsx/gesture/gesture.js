@@ -2,7 +2,7 @@ let element = document.documentElement;
 
 let isListening = false;
 
-element.addEventListener('mousedown', event => {
+document.addEventListener('mousedown', event => {
     let context = Object.create(null);
     contexts.set('mouse' + (1 << event.button), context);
     start(event,context);
@@ -31,19 +31,19 @@ element.addEventListener('mousedown', event => {
         end(event, context);
         contexts.delete('mouse' + (1 << event.button));
         if(event.buttons === 0){
-            element.removeEventListener('mousemove',mousemove);
-            element.removeEventListener('up',mouseup);
+            document.removeEventListener('mousemove',mousemove);
+            document.removeEventListener('mouseup',mouseup);
             isListening = false;
         }
     }
     if(!isListening){
-        element.addEventListener('mousemove',mousemove);
-        element.addEventListener('mouseup', mouseup);
+        document.addEventListener('mousemove',mousemove);
+        document.addEventListener('mouseup', mouseup);
         isListening = true;
     }
 });
 let contexts = new Map();
-element.addEventListener("touchstart", event => {
+document.addEventListener("touchstart", event => {
     for(let touch of event.changedTouches){
         let context = Object.create(null);
         contexts.set(touch.identifier, context);
@@ -51,14 +51,14 @@ element.addEventListener("touchstart", event => {
     }
 })
 
-element.addEventListener("touchmove", event => {
+document.addEventListener("touchmove", event => {
     for(let touch of event.changedTouches){
         let context = contexts.get(touch.identifier);
         move(touch,context);
     }
 })
 
-element.addEventListener("touchend", event => {
+document.addEventListener("touchend", event => {
     for(let touch of event.changedTouches){
         let context = contexts.get(touch.identifier);
         end(touch, context);
@@ -66,7 +66,7 @@ element.addEventListener("touchend", event => {
     }
 })
 
-element.addEventListener("touchcancel", event => {
+document.addEventListener("touchcancel", event => {
     for(let touch of event.changedTouches){
         let context = contexts.get(touch.identifier);
         cancel(touch,context);
@@ -101,6 +101,7 @@ let move = (point,context) => {
     }
 
     if(context.isPan){
+        console.log(dx,dy);
         console.log('pan')
     }
     // console.log('mousemove',point.clientX,point.clientY);
@@ -114,11 +115,19 @@ let end = (point,context) => {
         console.log('tap')
     }
     if(context.isPress){
-        console.log('pressend')
+        console.log('pressend');
     }
     
 }
 let cancel = (point,context) =>{
     clearTimeout(context.handler);
     console.log('cancel',point.clientX,point.clientY)
+}
+
+function dispatch(type,properties){
+    let event = new Event(type);
+    for(let name in properties){
+        event[name] = properties[name];
+    }
+    element.dispatchEvent(event);
 }
