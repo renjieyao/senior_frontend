@@ -23,6 +23,7 @@ module.exports = {
         },
         compress:true,
         port:8888,
+        hot:true,
     },
     mode:"development",
 }

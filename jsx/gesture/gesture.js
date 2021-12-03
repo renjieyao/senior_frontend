@@ -81,6 +81,10 @@ export class Recognizer {
     }
     start(point, context) {
         context.startX = point.clientX, context.startY = point.clientY;
+        this.dispatcher.dispatch('start',{
+            clientX: point.clientX,
+            clientY: point.clientY,
+        });
         context.points = [{
             t: Date.now(),
             x: point.clientX,
@@ -110,8 +114,8 @@ export class Recognizer {
             this.dispatcher.dispatch('panstart',{
                 startX: context.startX,
                 startY: context.startY,
-                clientX: context.clientX,
-                clientY: context.clientY,
+                clientX: point.clientX,
+                clientY: point.clientY,
                 isVertical: context.isVertical,
             });
             clearTimeout(context.handler);
@@ -121,8 +125,8 @@ export class Recognizer {
             this.dispatcher.dispatch('pan',{
                 startX: context.startX,
                 startY: context.startY,
-                clientX: context.clientX,
-                clientY: context.clientY,
+                clientX: point.clientX,
+                clientY: point.clientY,
                 isVertical: context.isVertical,
             });
         }
@@ -154,11 +158,11 @@ export class Recognizer {
             this.dispatcher.dispatch('flick',{
                 startX: context.startX,
                 startY: context.startY,
-                clientX: context.clientX,
-                clientY: context.clientY,
+                clientX: point.clientX,
+                clientY: point.clientY,
                 isVertical: context.isVertical,
                 isFlick: context.isFlick,
-                volocity: v,
+                velocity: v,
             });
         } else {
             context.isFlick = false;
@@ -167,13 +171,24 @@ export class Recognizer {
             this.dispatcher.dispatch('panend',{
                 startX: context.startX,
                 startY: context.startY,
-                clientX: context.clientX,
-                clientY: context.clientY,
+                clientX: point.clientX,
+                clientY: point.clientY,
                 isVertical: context.isVertical,
                 isFlick: context.isFlick,
+                velocity: v,
             });
             clearTimeout(context.handler);
         }
+
+        this.dispatcher.dispatch('end',{
+            startX: context.startX,
+            startY: context.startY,
+            clientX: point.clientX,
+            clientY: point.clientY,
+            isVertical: context.isVertical,
+            isFlick: context.isFlick,
+            velocity: v,
+        });
     }
     cancel(point, context) {
         clearTimeout(context.handler);
@@ -182,7 +197,6 @@ export class Recognizer {
 }
 export class Dispatcher{
     constructor(element){
-        console.log(element);
         this.element = element;
     }
     dispatch(type, properties = {}) {
